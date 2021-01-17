@@ -37,7 +37,7 @@ def pick_tag_name(s):
             tag_end = True
             break
         if i in BLANK:
-            if :
+            if tag_name_temp:
                 tag_name = ''.join(tag_name_temp)
             continue
         elif i == '/':
