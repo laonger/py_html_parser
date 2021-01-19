@@ -1,8 +1,7 @@
 #!/usr/bin/env pypy3
 
+import utils
 
-BLANK = [' ', '\r', '\n', '\t']
-QUOT = ['\'', '\"']
 
 def new_node():
     """docstring for new_node"""
@@ -13,38 +12,30 @@ def new_node():
         [],     # 3, children
     ]
 
+
 def pick_tag_name(s):
     """docstring for pick_tag_name"""
     tag_end = False
     block_close = 0         # -1, /在tag name左边，1，/在tag name右边（"</div>, <br/>'）
-    quot = []
     tag_name = ''
     quot = ''
     tag_name_temp = []
     key_temp = []
     key = ''
     for n, i in enumerate(s):
-        #if i in QUOT:
-        #    if i in quot:
-        #        quot.remove(i)
-        #    else:
-        #        quot.append(i)
-        #if quot:
-        #    continue
         if i == '<' and not tag_name_temp:  # 抛弃掉第一个<, 不可能出现"   <div"这种情况
             continue
         if i == '>':
             tag_end = True
             break
-        if i in BLANK:
+        if i in utils.BLANK:
             if tag_name_temp:
                 tag_name = ''.join(tag_name_temp)
+                break
             continue
         elif i == '/':
-            block_close = 1 if tag_name_temp else -1
-            if block_close == 1:
-                tag_end = True
-                break
+            block_close = -1 if not tag_name_temp else 1
+            tag_end = True
             continue
         else:
             tag_name_temp.append(i)
@@ -62,11 +53,9 @@ def pick_attrs(s):
     l =[]
     key = ''
     quot = ''
-    #elif i == '/':                     # 如果是一个独立的tag怎么办
-    #    block_close = True
-    #    continue
+    block_close = 0
     for n, i in enumerate(s):
-        if i in BLANK and not quot:
+        if i in utils.BLANK and not quot:
             continue
         if i != '=':
             l.append(i)
@@ -74,31 +63,47 @@ def pick_attrs(s):
             key = ''.join(l)
             l = []
 
-        if i in QUOT:
+        if i in utils.QUOT:
             if not quot:
                 quot = i
             elif i == quot: # 引号结束
-                d[key] = ''.join(l)
+                d[key] = utils.remove_quot(''.join(l))
                 l = []
                 key = ''
                 quot = ''
+        if i == '/' and not quot:
+            block_close = 1
         if i == '>' and not quot:
             break
-    return n, d
+    return n, d, block_close
 
-def node_tree(s, node_list=None, tag_list=None, start_n=0):
-    """docstring for c"""
+def node_tree(s, node_list=None, tag_list=None):
+    """docstring for c
+    [
+        [
+            tag_name,
+            [block_start_int, block_end_int],
+            attrs,      # dict
+            [
+                child_1,
+                child_2
+            ]
+        ],
+    ]
+    """
     n = -1
+    pre_n = n
     tag_name = ''
     if tag_list is None:
         tag_list = []
     cur = ''
     other = ''
+    attrs = {}
     if node_list is None:
         node_list = []
     node = None
     while n < len(s):
-        n+=1
+        pre_n, n = utils.n_increase(n, 1)
         if n == len(s)-1:
             cur, other = s[n], ''   # TODO
         elif n == len(s):
@@ -107,19 +112,29 @@ def node_tree(s, node_list=None, tag_list=None, start_n=0):
             cur, other = s[n], s[n+1:]
         if cur == '<':
             delta_n, tag_name, tag_end, block_close = pick_tag_name(other)
-            if tag_name == 'br':
-                print('nnnn', tag_name, block_close)
+            pre_n, n = utils.n_increase(n, delta_n)
+            if not tag_end:
+                n += 1
+                cur, other = s[n], s[n+1:]
+                delta_n, attrs, block_close = pick_attrs(other)
+                pre_n, n = utils.n_increase(n, delta_n)
+
             if block_close <0:         # 如果是结束block标记    
-                n +=delta_n
                 node = tag_list.pop()
-                node[1][1] = n +2 +start_n
+                if tag_name != node[0]:     # 如果出现莫名奇妙的结束tag，则忽略
+                    continue
+                node[1][1] = pre_n
                 continue
             elif block_close >0: # 如果是一个独立的tag
                 node = new_node()
                 node[0] = tag_name
-                node[1][0] = n +2 +start_n
-                node[1][1] = n +2 +start_n
-                node_list.append(node)
+                node[1][0] = n+2
+                node[1][1] = n+2
+                node[2] = attrs
+                if tag_list:
+                    tag_list[-1][3].append(node)
+                else:
+                    node_list.append(node)
                 continue
             else:
                 node = new_node()
@@ -128,50 +143,9 @@ def node_tree(s, node_list=None, tag_list=None, start_n=0):
                 else:
                     node_list.append(node)
                 node[0] = tag_name
-                n += delta_n
-                if not tag_end:
-                    n += 1
-                    cur, other = s[n], s[n+1:]
-                    delta_n, attrs = pick_attrs(other)
-                    node[2] = attrs
-                    n +=delta_n
-                node[1][0] = n+2 +start_n
+                node[1][0] = n+2
+                node[2] = attrs
                 tag_list.append(node)
                 continue
-    return node_list, n
+    return node_list
 
-#def node_tree(s, node_list=None, tag_list=None, start_n=0):
-#    """docstring for c"""
-#    n = -1
-#    in_block = False
-#    tag_name = ''
-#    if tag_list is None:
-#        tag_list = []
-#    cur = ''
-#    other = ''
-#    if node_list is None:
-#        node_list = []
-#    node = None
-#    while n < len(s):
-#        n+=1
-#        if n == len(s)-1:
-#            cur, other = s[n], ''   # TODO
-#        elif n == len(s):
-#            break                   # TODO
-#        else:
-#            cur, other = s[n], s[n+1:]
-#        if in_block:
-#            pass
-#        if cur == '<':
-#            delta_n, tag_name, tag_end, block_close = pick_tag_name(other)
-#            n = n +delta_n
-#            if block_close:
-#                pass
-#            else:
-#                if not tag_end:
-#                    n +=1
-#                    cur, other = s[n], s[n:]
-#                    delta_n, attrs = pick_attrs(other)
-#
-#            node = new_node()
-#    return node_list, n
