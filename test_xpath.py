@@ -69,5 +69,6 @@ assert result == [['a', [79, 80], {}, []], ['a', [103, 104], {}, []]]
 #assert result == [['div', [115, 116], {'id': 'jjj'}, []]]
 
 print('#############################')
-result = xpath.pickup(node_tree, "//div/div")
-#print(result)
+cmd_list = xpath.path_parser("//div/div")
+result = xpath.aaaa(node_tree, cmd_list)
+print(result)

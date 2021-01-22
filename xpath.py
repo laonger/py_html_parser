@@ -142,8 +142,32 @@ def pickup(node_tree, cmd_string):
 
 
 
-def aaaa(node_list):
+def aaaa(node_tree, cmd_list, result=None, n=0, max_n=0):
     """docstring for a"""
-    node = ''
+    if result is None:
+        result = []
+    if not max_n:
+        max_n = len(cmd_list)-1
+    if n > max_n:
+        result.extend(node_tree)
+        return result
+    cmd = cmd_list[n]
+    for node in node_tree:
+        if node[0] == cmd[0]:
+            n += 1
+            result.extend(aaaa(node[3], cmd_list, result, n, max_n))
+        elif node[3]:
+            result.extend(aaaa(node[3], cmd_list, result, n, max_n))
+    return result
+
+
+
+
+
+
+
+
+
+
 
 
