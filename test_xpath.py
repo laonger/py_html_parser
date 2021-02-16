@@ -34,8 +34,6 @@ assert result == [['div', 1, {'class': "sss:'111'"}], ['div', 2, {'id': "jjj"}],
 
 
 
-
-
 node_tree = [
     ['div', [7, 109], {}, [
         ['div', [17, 89], {}, [
@@ -49,26 +47,26 @@ node_tree = [
     ['div', [115, 116], {'id': 'jjj'}, []],
 ]
 
-cmd = xpath.path_parser("/div")[0]
-result = xpath.cmd_2(node_tree[0][3], cmd)
-assert result == [['div', [17, 89], {}, [['br', [32, 32], {}, []], ['img', [61, 61], {'src': 'aldskjf'}, []], ['br', [67, 67], {}, []], ['a', [79, 80], {}, []]]]]
 
-cmd = xpath.path_parser("/div[@id='jjj']")[0]
-result = xpath.cmd_2(node_tree, cmd)
-assert result == [['div', [115, 116], {'id': 'jjj'}, []]]
+node_tree = [
+    ['div', [7, 109], {}, [
+        ['div', [17, 89], {}, [
+            ['br', [32, 32], {}, []],
+            ['img', [61, 61], {'src': 'aldskjf'}, []],
+            ['br', [67, 67], {}, []],
+            ['a', [79, 80], {}, []]
+        ]],
+        ['a', [103, 104], {}, []]
+    ]],
+    ['div', [115, 116], {'id': 'jjj'}, [
+        ['br', [84, 67], {}, []],
+        ['a', [79, 99], {}, []]
+    ]],
+]
 
-
-cmd = xpath.path_parser("//a")[0]
-result = xpath.cmd_3(node_tree, cmd)
-assert result == [['a', [79, 80], {}, []], ['a', [103, 104], {}, []]]
-
-#result = xpath.pickup(node_tree, "//a")
-#assert result == [['a', [79, 80], {}, []], ['a', [103, 104], {}, []]]
-#
-#result = xpath.pickup(node_tree, "/div[@id='jjj']")
-#assert result == [['div', [115, 116], {'id': 'jjj'}, []]]
-
-print('#############################')
-cmd_list = xpath.path_parser("//div/div")
-result = xpath.aaaa(node_tree, cmd_list)
+result = xpath.pickup(node_tree, "//div/a")
+print(result)
+assert result == [['a', [103, 104], {}, []], ['a', [79, 99], {}, []], ['a', [79, 80], {}, []]]
+result = xpath.pickup(node_tree, "/div/br")
+assert result == [['br', [84, 67], {}, []]]
 print(result)

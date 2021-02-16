@@ -1,5 +1,6 @@
 #!/usr/bin/env pypy3
 
+import copy
 import utils
 
 
@@ -74,48 +75,6 @@ def path_parser(path):
             break
     return result
 
-def cmd_2(node_tree, cmd):
-    """docstring for cmd_1 /"""
-    result = []
-    if cmd[2]:
-        key, value = list(cmd[2].items())[0]
-    else:
-        key = ''
-        value = ''
-    for node in node_tree:
-        if node[0] == cmd[0]:
-            if key:
-                if node[2].get(key) == value:
-                    result.append(node)
-            else:
-                result.append(node)
-    return result
-
-def cmd_3(node_tree, cmd):
-    """docstring for cmd_1 //"""
-    result = []
-    if cmd[2]:
-        key, value = list(cmd[2].items())[0]
-    else:
-        key = ''
-        value = ''
-    def f(result, node_tree, cmd, key, value):
-        """docstring for f"""
-        for node in node_tree:
-            if node[0] == cmd[0]:
-                if key:
-                    if node[2].get(key) == value:
-                        result.append(node)
-                else:
-                    result.append(node)
-            if node[3]:
-                f(result, node[3], cmd, key, value)
-    f(result, node_tree, cmd, key, value)
-    return result
-
-
-
-
 def pickup(node_tree, cmd_string):
     """docstring for pickupo
      node_tree #[['div', [7, 109], {}, [['div', [17, 89], {}, [['br', [32, 32], {}, []], ['img', [61, 61], {'src': '"aldskjf"'}, []], ['br', [67, 67], {}, []], ['a', [79, 80], {}, []]]], ['a', [103, 104], {}, []]]]]
@@ -123,51 +82,33 @@ def pickup(node_tree, cmd_string):
     cmd_list #[['div', 1, {'class': '"sss:\'111\'"'}], ['div', 2, {'id': "'jjj'"}], ['a', 2, {}]]
     """
     cmd_list = path_parser(cmd_string)
-    f = node_list[0]
-    pick = False
-    cmd = cmd_list[0]
-    if cmd[0] == f[0]:
-        cmd = cmd_list[1]
-        f = f[3][0]
-        if cmd[0] == f[0]:
-            pass
-        else:
-            f = f[3][1]
-            if cmd[0] == f[0]:
-                pass
-            else:
-                pass
+    temp_1 = copy.copy(node_tree)
+    temp_2 = []
+    result = []
+    n = 0
+    cmd_count = len(cmd_list)-1
 
-    return node_list
-
-
-
-def aaaa(node_tree, cmd_list, result=None, n=0, max_n=0):
-    """docstring for a"""
-    if result is None:
-        result = []
-    if not max_n:
-        max_n = len(cmd_list)-1
-    if n > max_n:
-        result.extend(node_tree)
-        return result
-    cmd = cmd_list[n]
-    for node in node_tree:
-        if node[0] == cmd[0]:
-            n += 1
-            result.extend(aaaa(node[3], cmd_list, result, n, max_n))
-        elif node[3]:
-            result.extend(aaaa(node[3], cmd_list, result, n, max_n))
+    while n <= cmd_count:
+        temp_2 = []
+        cmd = cmd_list[n]
+        if cmd[1] == 3:
+            while temp_1:
+                node = temp_1.pop(0)
+                if node[0] == cmd[0]:
+                    if n == cmd_count:
+                        result.append(node)
+                    else:
+                        temp_2.extend(node[3])
+                if node[3]:
+                    temp_1.extend(node[3])
+        elif cmd[1] == 2:
+            for node in temp_1:
+                if cmd[0] == node[0]:
+                    if n == cmd_count:
+                        result.append(node)
+                    else:
+                        temp_2.extend(node[3])
+        temp_1 = temp_2
+        n += 1
     return result
-
-
-
-
-
-
-
-
-
-
-
 
