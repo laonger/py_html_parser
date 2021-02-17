@@ -187,5 +187,9 @@ def text(html_string, node):
             continue
         result.append(i)
     return ''.join(result)
+
+def get_attr(node, attr_key):
+    """docstring for get_attr"""
+    return node[2].get(attr_key)
     
 
