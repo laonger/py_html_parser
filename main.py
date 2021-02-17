@@ -1,5 +1,7 @@
 #!/usr/bin/env pypy3
 
+import copy
+
 import utils
 
 
@@ -7,7 +9,7 @@ def new_node():
     """docstring for new_node"""
     return [
         '',     # 0, tag_name
-        [0, 0], # 1, block start end
+        [-1, -1, -1, -1], # 0-tag_start(<), 1-block_start, 2-block_end, 3-end_tag_end;  tag_end = blog_start-1, end_tag_start = block_end +1
         {},     # 2, attrs
         [],     # 3, children
     ]
@@ -45,7 +47,8 @@ def pick_tag_name(s):
         while i != '>':
             n +=1
             i = s[n]
-    return n, tag_name, tag_end, block_close
+    # 因为s的起始位置就是cur_n的下一位，所以返回的时候要+1
+    return n+1, tag_name, tag_end, block_close
 
 def pick_attrs(s):
     """docstring for pick_attrs"""
@@ -75,9 +78,10 @@ def pick_attrs(s):
             block_close = 1
         if i == '>' and not quot:
             break
-    return n, d, block_close
+    # 因为s的起始位置就是cur_n的下一位，所以返回的时候要+1
+    return n+1, d, block_close
 
-def node_tree(s, node_list=None, tag_list=None):
+def node_tree(s):
     """docstring for c
     [
         [
@@ -94,13 +98,11 @@ def node_tree(s, node_list=None, tag_list=None):
     n = -1
     pre_n = n
     tag_name = ''
-    if tag_list is None:
-        tag_list = []
+    tag_list = []
     cur = ''
     other = ''
     attrs = {}
-    if node_list is None:
-        node_list = []
+    node_list = []
     node = None
     while n < len(s):
         pre_n, n = utils.n_increase(n, 1)
@@ -111,6 +113,8 @@ def node_tree(s, node_list=None, tag_list=None):
         else:
             cur, other = s[n], s[n+1:]
         if cur == '<':
+            tag_start_n = n
+
             delta_n, tag_name, tag_end, block_close = pick_tag_name(other)
             pre_n, n = utils.n_increase(n, delta_n)
             if not tag_end:
@@ -118,18 +122,23 @@ def node_tree(s, node_list=None, tag_list=None):
                 cur, other = s[n], s[n+1:]
                 delta_n, attrs, block_close = pick_attrs(other)
                 pre_n, n = utils.n_increase(n, delta_n)
+            end_tag_end_n = n+1
 
-            if block_close <0:         # 如果是结束block标记    
+            if block_close <0:         # 如果是结束block标记, 非独立tag   
                 node = tag_list.pop()
-                if tag_name != node[0]:     # 如果出现莫名奇妙的结束tag，则忽略
-                    continue
-                node[1][1] = pre_n
-                continue
+                while node[0] != tag_name:
+                    node = tag_list.pop()
+                    if not tag_list and node[0] != tag_name:
+                        raise # 如果出现莫名奇妙的结束tag，则忽略
+                node[1][2] = pre_n
+                node[1][3] = end_tag_end_n
             elif block_close >0: # 如果是一个独立的tag
                 node = new_node()
                 node[0] = tag_name
-                node[1][0] = n+2
-                node[1][1] = n+2
+                node[1][0] = tag_start_n
+                node[1][1] = n+1
+                node[1][2] = n+1
+                node[1][3] = end_tag_end_n
                 node[2] = attrs
                 if tag_list:
                     tag_list[-1][3].append(node)
@@ -143,9 +152,40 @@ def node_tree(s, node_list=None, tag_list=None):
                 else:
                     node_list.append(node)
                 node[0] = tag_name
-                node[1][0] = n+2
+                node[1][0] = tag_start_n
+                node[1][1] = n+1
                 node[2] = attrs
                 tag_list.append(node)
                 continue
     return node_list
+
+def text(html_string, node):
+    """docstring for text"""
+    result = []
+    anchor_list = []
+    temp = [node]
+    html_string = html_string[node[1][0]:node[1][3]]
+    start_n = node[1][0]
+    while temp:
+        n = temp.pop(0)
+        if n[3]:
+            temp.extend(n[3])
+        if n[1][0] != n[1][1] and n[1][0] != -1 and n[1][1] != -1:
+            anchor_list.append((n[1][0], n[1][1]))
+        if n[1][2] != n[1][3] and n[1][2] != -1 and n[1][3] != -1:
+            anchor_list.append((n[1][2], n[1][3]))
+
+    anchor_list.sort()
+    anchor = anchor_list.pop(0)
+    for n, i in enumerate(html_string):
+        n += start_n
+        if n > anchor[1] and anchor_list:
+            anchor = anchor_list.pop(0)
+        if n >= anchor[0] and n <= anchor[1]:
+            continue
+        if i in utils.BLANK:
+            continue
+        result.append(i)
+    return ''.join(result)
+    
 
