@@ -4,6 +4,8 @@ import copy
 
 import utils
 
+# TODO 处理空格，换行符，处理<br/>换行，<p>换行
+
 
 def new_node():
     """docstring for new_node"""
@@ -184,8 +186,8 @@ def text(html_string, node):
             anchor = anchor_list.pop(0)
         if n >= anchor[0] and n <= anchor[1]:
             continue
-        if i in utils.BLANK:
-            continue
+        #if i in utils.BLANK:
+        #    continue
         result.append(i)
     return ''.join(result)
 
