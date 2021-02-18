@@ -97,14 +97,14 @@ def node_tree(s):
     """
     n = -1
     pre_n = n
-    tag_name = ''
     tag_list = []
     cur = ''
     other = ''
-    attrs = {}
     node_list = []
-    node = None
     while n < len(s):
+        attrs = {}
+        tag_name = ''
+        node = None
         pre_n, n = utils.n_increase(n, 1)
         if n == len(s)-1:
             cur, other = s[n], ''   # TODO
@@ -118,8 +118,9 @@ def node_tree(s):
             delta_n, tag_name, tag_end, block_close = pick_tag_name(other)
             pre_n, n = utils.n_increase(n, delta_n)
             if not tag_end:
-                n += 1
-                cur, other = s[n], s[n+1:]
+                #n += 1
+                #cur, other = s[n], s[n+1:]
+                other = s[n:]
                 delta_n, attrs, block_close = pick_attrs(other)
                 pre_n, n = utils.n_increase(n, delta_n)
             end_tag_end_n = n+1
@@ -191,5 +192,4 @@ def text(html_string, node):
 def get_attr(node, attr_key):
     """docstring for get_attr"""
     return node[2].get(attr_key)
-    
 
