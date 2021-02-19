@@ -24,6 +24,10 @@ s = """//div[@class="sss:'111'"]"""
 result = xpath.path_parser(s)
 assert result == [['div', 3, {'class': "sss:'111'"}]]
 
+s = """//div[@class="sss:'111'"][@id="jjj:'222'"]"""
+result = xpath.path_parser(s)
+assert result == [['div', 3, {'class': "sss:'111'", 'id':"jjj:'222'"}]]
+
 s = """//div[@class="sss:'111'"]/div[@id='jjj']"""
 result = xpath.path_parser(s)
 assert result == [['div', 3, {'class': "sss:'111'"}], ['div', 2, {'id': "jjj"}]]
@@ -31,6 +35,10 @@ assert result == [['div', 3, {'class': "sss:'111'"}], ['div', 2, {'id': "jjj"}]]
 s = """div[@class="sss:'111'"]/div[@id='jjj']/a"""
 result = xpath.path_parser(s)
 assert result == [['div', 1, {'class': "sss:'111'"}], ['div', 2, {'id': "jjj"}], ['a', 2, {}]]
+
+s = """//div[@class="sss:'111'"][@id="jjj:'222'"]/a"""
+result = xpath.path_parser(s)
+assert result == [['div', 3, {'class': "sss:'111'", 'id': "jjj:'222'"}], ['a', 2, {}]]
 
 
 
@@ -65,8 +73,10 @@ node_tree = [
 ]
 
 result = xpath.pickup(node_tree, "//div/a")
-print(result)
 assert result == [['a', [103, 104], {}, []], ['a', [79, 99], {}, []], ['a', [79, 80], {}, []]]
 result = xpath.pickup(node_tree, "/div/br")
 assert result == [['br', [84, 67], {}, []]]
-print(result)
+
+result = xpath.pickup(node_tree, "/div[@id='jjj']/a")
+assert result == [['a', [79, 99], {}, []]]
+

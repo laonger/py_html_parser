@@ -36,22 +36,22 @@ def path_parser(path):
             if temp:
                 cmd[0] = ''.join(temp)
                 temp = []
+            if cmd[0]:
                 result.append(cmd)
-                cmd = new_cmd()
+            cmd = new_cmd()
             if other[0] == '/':
                 cmd[1] = 3
                 n +=1
             else:
                 cmd[1] = 2
         elif cur == '[' and not quot:
-            cmd[0] = ''.join(temp)
-            temp = []
+            if temp and not cmd[0]:
+                cmd[0] = ''.join(temp)
+                temp = []
         elif cur == ']' and not quot:
             cmd[2][attr_key] = utils.remove_quot(''.join(temp))
             attr_key = ''
             temp = []
-            result.append(cmd)
-            cmd = new_cmd()
         elif cur == '=' and not quot:
             attr_key = utils.remove_quot(''.join(temp))
             temp = []
@@ -70,10 +70,16 @@ def path_parser(path):
             if not cmd[0] and temp:
                 cmd[0] = ''.join(temp)
                 temp = []
-                result.append(cmd)
-                cmd = new_cmd()
+            result.append(cmd)
             break
     return result
+
+def predicate_attribute_check(node, cmd):
+    """docstring for predicate_attribute_check"""
+    for k, v in cmd[2].items():
+        if node[2].get(k) != v:
+            return False
+    return True
 
 def pickup(node_tree, cmd_string):
     """docstring for pickupo
@@ -95,6 +101,9 @@ def pickup(node_tree, cmd_string):
             while temp_1:
                 node = temp_1.pop(0)
                 if node[0] == cmd[0]:
+                    if cmd[2]:      # 对于谓语的支持
+                        if not predicate_attribute_check(node, cmd):
+                            continue
                     if n == cmd_count:
                         result.append(node)
                     else:
@@ -104,6 +113,9 @@ def pickup(node_tree, cmd_string):
         elif cmd[1] == 2:
             for node in temp_1:
                 if cmd[0] == node[0]:
+                    if cmd[2]:      # 对于谓语的支持
+                        if not predicate_attribute_check(node, cmd):
+                            continue
                     if n == cmd_count:
                         result.append(node)
                     else:
