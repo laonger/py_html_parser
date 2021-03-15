@@ -2,7 +2,7 @@
 
 import copy
 
-import utils
+from . import utils
 
 # TODO 处理空格，换行符，处理<br/>换行，<p>换行
 
@@ -17,7 +17,7 @@ def new_node():
     ]
 
 
-def pick_tag_name(s):
+def pick_tag_name(s, n=0, max_n=0):
     """docstring for pick_tag_name"""
     tag_end = False
     block_close = 0         # -1, /在tag name左边，1，/在tag name右边（"</div>, <br/>'）
@@ -26,7 +26,12 @@ def pick_tag_name(s):
     tag_name_temp = []
     key_temp = []
     key = ''
-    for n, i in enumerate(s):
+    if not max_n:
+        max_n = len(s)-1
+    n -= 1
+    while n <= max_n:
+        n +=1
+        i = s[n]
         if i == '<' and not tag_name_temp:  # 抛弃掉第一个<, 不可能出现"   <div"这种情况
             continue
         if i == '>':
@@ -49,17 +54,22 @@ def pick_tag_name(s):
         while i != '>':
             n +=1
             i = s[n]
-    # 因为s的起始位置就是cur_n的下一位，所以返回的时候要+1
-    return n+1, tag_name, tag_end, block_close
+    return n, tag_name, tag_end, block_close
 
-def pick_attrs(s):
+def pick_attrs(s, n=0, max_n=0):
     """docstring for pick_attrs"""
     d = {}
     l =[]
     key = ''
     quot = ''
     block_close = 0
-    for n, i in enumerate(s):
+    if not max_n:
+        max_n = len(s)-1
+    n -=1
+    while n <= max_n:
+        n+=1
+        i = s[n]
+
         if i in utils.BLANK and not quot:
             continue
         if i != '=':
@@ -80,8 +90,45 @@ def pick_attrs(s):
             block_close = 1
         if i == '>' and not quot:
             break
-    # 因为s的起始位置就是cur_n的下一位，所以返回的时候要+1
-    return n+1, d, block_close
+    return n, d, block_close
+
+def pick_comment(s, n=0, max_n=0):
+    """docstring for pick_comment"""
+    if not max_n:
+        max_n = len(s)-1
+    comment_n = 1
+    comment_start = '<' # 因为传递n进来的时候，把'<'让过去了
+    n-=1
+    while n < max_n:
+        n+=1
+        cur = s[n]
+        if cur in utils.BLANK:
+            continue
+        comment_start = comment_start +cur
+        if len(comment_start) > 4:
+            break
+    if comment_start.startswith('<!--'):
+        comment_start = '<!--'
+        comment_end = '-->'
+    else:
+        comment_start = '<!'
+        comment_end = '>'
+    ss = ' '
+    while n < max_n:
+        n+= 1
+        cur = s[n]
+        if cur in utils.BLANK:
+            continue
+        if len(ss) == len(comment_end):
+            ss = ss[1:]
+        ss = ss+cur
+        if ss == comment_start:
+            comment_n += 1
+        elif ss == comment_end:
+            comment_n -= 1
+        if not comment_n:
+            return n
+
 
 def node_tree(s):
     """docstring for c
@@ -103,29 +150,42 @@ def node_tree(s):
     cur = ''
     other = ''
     node_list = []
-    while n < len(s):
+    need_pass = ''
+    max_n = len(s)-1
+    while n <= max_n:
         attrs = {}
         tag_name = ''
         node = None
         pre_n, n = utils.n_increase(n, 1)
-        if n == len(s)-1:
-            cur, other = s[n], ''   # TODO
-        elif n == len(s):
+        if n > max_n:
             break                   # TODO
-        else:
-            cur, other = s[n], s[n+1:]
+        cur = s[n]
+        if cur != '<' and need_pass:
+            continue
         if cur == '<':
             tag_start_n = n
 
-            delta_n, tag_name, tag_end, block_close = pick_tag_name(other)
-            pre_n, n = utils.n_increase(n, delta_n)
+            new_n, tag_name, tag_end, block_close = pick_tag_name(s, n+1, max_n)
+            if tag_name == 'meta':
+                block_close = 1
+            if tag_name[0] == '!':
+                new_n = pick_comment(s, n+1, max_n)
+                pre_n, n = n, new_n
+                continue
+            pre_n, n = n, new_n
             if not tag_end:
-                #n += 1
-                #cur, other = s[n], s[n+1:]
-                other = s[n:]
-                delta_n, attrs, block_close = pick_attrs(other)
-                pre_n, n = utils.n_increase(n, delta_n)
-            end_tag_end_n = n+1
+                new_n, attrs, block_close = pick_attrs(s, n+1, max_n)
+                pre_n, n = n, new_n
+            end_tag_end_n = n
+
+            # TODO 抛弃script
+            if tag_name == 'script':
+                if not block_close:
+                    need_pass = 'script'
+                    attrs = {}
+                else:
+                    need_pass = ''
+                continue
 
             if block_close <0:         # 如果是结束block标记, 非独立tag   
                 node = tag_list.pop()
