@@ -7,14 +7,14 @@ from . import utils
 # TODO 处理空格，换行符，处理<br/>换行，<p>换行
 
 
-def new_node():
+def new_node(tag_name):
     """docstring for new_node"""
-    return [
-        '',     # 0, tag_name
+    return (
+        tag_name,     # 0, tag_name
         [-1, -1, -1, -1], # 0-tag_start(<), 1-block_start, 2-block_end, 3-end_tag_end;  tag_end = blog_start-1, end_tag_start = block_end +1
         {},     # 2, attrs
         [],     # 3, children
-    ]
+    )
 
 
 def pick_tag_name(s, n=0, max_n=0):
@@ -196,28 +196,28 @@ def node_tree(s):
                 node[1][2] = pre_n
                 node[1][3] = end_tag_end_n
             elif block_close >0: # 如果是一个独立的tag
-                node = new_node()
-                node[0] = tag_name
+                node = new_node(tag_name)
                 node[1][0] = tag_start_n
                 node[1][1] = n+1
                 node[1][2] = n+1
                 node[1][3] = end_tag_end_n
-                node[2] = attrs
+                for k, v in attrs.items():
+                    node[2][k] = v
                 if tag_list:
                     tag_list[-1][3].append(node)
                 else:
                     node_list.append(node)
                 continue
             else:
-                node = new_node()
+                node = new_node(tag_name)
                 if tag_list:
                     tag_list[-1][3].append(node)
                 else:
                     node_list.append(node)
-                node[0] = tag_name
                 node[1][0] = tag_start_n
                 node[1][1] = n+1
-                node[2] = attrs
+                for k, v in attrs.items():
+                    node[2][k] = v
                 tag_list.append(node)
                 continue
     return node_list

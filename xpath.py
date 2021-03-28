@@ -1,7 +1,7 @@
 #!/usr/bin/env pypy3
 
 import copy
-import utils
+from . import utils
 
 
 def new_cmd():
@@ -93,13 +93,16 @@ def pickup(node_tree, cmd_string):
     result = []
     n = 0
     cmd_count = len(cmd_list)-1
-
     while n <= cmd_count:
         temp_2 = []
         cmd = cmd_list[n]
         if cmd[1] == 3:
+            pre = None
             while temp_1:
                 node = temp_1.pop(0)
+                pre = temp_1
+                if node[3]:
+                    temp_1.extend(node[3])
                 if node[0] == cmd[0]:
                     if cmd[2]:      # 对于谓语的支持
                         if not predicate_attribute_check(node, cmd):
@@ -108,8 +111,6 @@ def pickup(node_tree, cmd_string):
                         result.append(node)
                     else:
                         temp_2.extend(node[3])
-                if node[3]:
-                    temp_1.extend(node[3])
         elif cmd[1] == 2:
             for node in temp_1:
                 if cmd[0] == node[0]:

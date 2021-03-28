@@ -1,27 +1,58 @@
 #!/usr/bin/env pypy3
 
-from . import node
+from . import nodes
 from . import xpath
 
 
-class HTML(object):
-    """docstring for NodeTree"""
-    def __init__(self, html_string):
-        super(HTML, self).__init__()
+class Node(object):
+    """docstring for Node"""
+    def __init__(self, node, html_string, node_tree_whole):
+        super(Node, self).__init__()
+        self.node = node
         self.html_string = html_string
-        self.node_tree = node.node_tree(html_string)
+        self.node_tree_whole = node_tree_whole
 
-    def node(self, cmd_string, node_tree=None):
+
+    @classmethod
+    def new(cls, html_string):
+        """docstring for new"""
+        node_list = nodes.node_tree(html_string)
+        if len(node_list) == 1:
+            return cls(node_list[0], html_string, node_list)
+        else:
+            l = []
+            for i in node_list:
+                l.append(cls(i, html_string, node_list))
+            return l
+
+    def pick(self, cmd_string, node_tree=None):
         """docstring for node"""
         if node_tree is None:
-            node_tree = self.node_tree
-        return xpath.pickup(node_tree, cmd_string)
+            node_tree = self.node
+        if not isinstance(node_tree, list):
+            node_tree = [node_tree]
+        _node_tree = []
+        for n in node_tree:
+            if isinstance(n, Node):
+                n = n.node
+            _node_tree.append(n)
+        _node_list = xpath.pickup(_node_tree, cmd_string)
+        node_list = []
+        for n in _node_list:
+            node_list.append(Node(n, self.html_string, self.node_tree_whole))
+        return node_list
 
-    def text(self, node):
+    def text(self):
         """docstring for text"""
-        return node.text(self.html_string, node)
+        if isinstance(self.node, list):
+            raise
+        return nodes.text(self.html_string, self.node)
 
-    def attr(self, node, key):
+    def attr(self, key):
         """docstring for attr"""
-        return node.get_attr(node, key)
+        if isinstance(self.node, list):
+            raise
+        return nodes.get_attr(self.node, key)
+
+
 
