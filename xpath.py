@@ -88,6 +88,8 @@ def pickup(node_tree, cmd_string):
     cmd_list #[['div', 1, {'class': '"sss:\'111\'"'}], ['div', 2, {'id': "'jjj'"}], ['a', 2, {}]]
     """
     cmd_list = path_parser(cmd_string)
+    if cmd_list[0][1] == 2 and len(node_tree) == 1:
+        node_tree = node_tree[0][3]
     temp_1 = copy.copy(node_tree)
     temp_2 = []
     result = []

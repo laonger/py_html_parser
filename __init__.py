@@ -25,7 +25,7 @@ class Node(object):
                 l.append(cls(i, html_string, node_list))
             return l
 
-    def pick(self, cmd_string, node_tree=None):
+    def pickup(self, cmd_string, node_tree=None):
         """docstring for node"""
         if node_tree is None:
             node_tree = self.node
@@ -41,6 +41,8 @@ class Node(object):
         for n in _node_list:
             node_list.append(Node(n, self.html_string, self.node_tree_whole))
         return node_list
+
+    xpath = pickup
 
     def text(self):
         """docstring for text"""
