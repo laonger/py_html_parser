@@ -160,66 +160,70 @@ def node_tree(s):
         if n > max_n:
             break                   # TODO
         cur = s[n]
+
+        if cur != '<':
+            continue
+
         if cur != '<' and need_pass:
             continue
-        if cur == '<':
-            tag_start_n = n
 
-            new_n, tag_name, tag_end, block_close = pick_tag_name(s, n+1, max_n)
-            if tag_name == 'meta':
-                block_close = 1
-            if tag_name[0] == '!':
-                new_n = pick_comment(s, n+1, max_n)
-                pre_n, n = n, new_n
-                continue
+        tag_start_n = n
+
+        new_n, tag_name, tag_end, block_close = pick_tag_name(s, n+1, max_n)
+        if tag_name == 'meta':
+            block_close = 1
+        if tag_name[0] == '!':
+            new_n = pick_comment(s, n+1, max_n)
             pre_n, n = n, new_n
-            if not tag_end:
-                new_n, attrs, block_close = pick_attrs(s, n+1, max_n)
-                pre_n, n = n, new_n
-            end_tag_end_n = n
+            continue
+        pre_n, n = n, new_n
+        if not tag_end:
+            new_n, attrs, block_close = pick_attrs(s, n+1, max_n)
+            pre_n, n = n, new_n
+        end_tag_end_n = n
 
-            # TODO 抛弃script
-            if tag_name == 'script':
-                if not block_close:
-                    need_pass = 'script'
-                    attrs = {}
-                else:
-                    need_pass = ''
-                continue
-
-            if block_close <0:         # 如果是结束block标记, 非独立tag   
-                node = tag_list.pop()
-                while node[0] != tag_name:
-                    node = tag_list.pop()
-                    if not tag_list and node[0] != tag_name:
-                        raise # 如果出现莫名奇妙的结束tag，则忽略
-                node[1][2] = pre_n
-                node[1][3] = end_tag_end_n
-            elif block_close >0: # 如果是一个独立的tag
-                node = new_node(tag_name)
-                node[1][0] = tag_start_n
-                node[1][1] = n+1
-                node[1][2] = n+1
-                node[1][3] = end_tag_end_n
-                for k, v in attrs.items():
-                    node[2][k] = v
-                if tag_list:
-                    tag_list[-1][3].append(node)
-                else:
-                    node_list.append(node)
-                continue
+        # TODO 抛弃script
+        if tag_name == 'script':
+            if not block_close:
+                need_pass = 'script'
+                attrs = {}
             else:
-                node = new_node(tag_name)
-                if tag_list:
-                    tag_list[-1][3].append(node)
-                else:
-                    node_list.append(node)
-                node[1][0] = tag_start_n
-                node[1][1] = n+1
-                for k, v in attrs.items():
-                    node[2][k] = v
-                tag_list.append(node)
-                continue
+                need_pass = ''
+            continue
+
+        if block_close <0:         # 如果是结束block标记, 非独立tag   
+            node = tag_list.pop()
+            while node[0] != tag_name:
+                node = tag_list.pop()
+                if not tag_list and node[0] != tag_name:
+                    raise # 如果出现莫名奇妙的结束tag，则忽略
+            node[1][2] = pre_n
+            node[1][3] = end_tag_end_n
+        elif block_close >0: # 如果是一个独立的tag
+            node = new_node(tag_name)
+            node[1][0] = tag_start_n
+            node[1][1] = n+1
+            node[1][2] = n+1
+            node[1][3] = end_tag_end_n
+            for k, v in attrs.items():
+                node[2][k] = v
+            if tag_list:
+                tag_list[-1][3].append(node)
+            else:
+                node_list.append(node)
+            continue
+        else:
+            node = new_node(tag_name)
+            if tag_list:
+                tag_list[-1][3].append(node)
+            else:
+                node_list.append(node)
+            node[1][0] = tag_start_n
+            node[1][1] = n+1
+            for k, v in attrs.items():
+                node[2][k] = v
+            tag_list.append(node)
+            continue
     return node_list
 
 def text(html_string, node):
