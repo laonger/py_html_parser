@@ -1,7 +1,7 @@
 #!/usr/bin/env pypy3
 
 import time
-from . import node as main
+from . import nodes as main
 
 #import httpx
 #t = httpx.get('https://www.w3schools.com/html/html_intro.asp')
@@ -69,8 +69,7 @@ test_1_str = """
 </div>
 """
 node_list = main.node_tree(test_1_str)
-print(node_list)
-assert node_list == [['div', [1, 6, 7, 12], {}, []]]
+assert node_list == [('div', [1, 6, 7, 12], {}, [])]
 
 
 test_2_str = """ < div>
@@ -81,7 +80,7 @@ test_2_str = """ < div>
 """
 
 node_list = main.node_tree(test_2_str)
-assert node_list == [['div', [1, 7, 44, 49], {}, [['div', [12, 17, 37, 42], {}, [['br', [26, 32, 32, 31], {}, []]]]]]]
+assert node_list == [('div', [1, 7, 44, 49], {}, [('div', [12, 17, 37, 42], {}, [('br', [26, 32, 32, 31], {}, [])])])]
 
 
 test_3_str = """
@@ -95,7 +94,8 @@ test_3_str = """
 </div>
 """
 node_list = main.node_tree(test_3_str)
-assert node_list == [['div', [1, 7, 109, 114], {}, [['div', [12, 17, 89, 94], {}, [['br', [26, 32, 32, 31], {}, []], ['img', [41, 61, 61, 60], {'src': 'aldskjf'}, []], ['br', [61, 67, 67, 66], {}, []], ['a', [76, 79, 80, 83], {}, []]]], ['a', [100, 103, 104, 107], {}, []]]]]
+
+assert node_list == [('div', [1, 7, 109, 114], {}, [('div', [12, 17, 89, 94], {}, [('br', [26, 32, 32, 31], {}, []), ('img', [41, 61, 61, 60], {'src': 'aldskjf'}, []), ('br', [61, 67, 67, 66], {}, []), ('a', [76, 79, 80, 83], {}, [])]), ('a', [100, 103, 104, 107], {}, [])])]
 
 
 
@@ -109,7 +109,7 @@ test_4_str = """
 """
 t = time.time()
 node_list = main.node_tree(test_4_str)
-assert node_list == [['div', [1, 43, 66, 72], {'class': 'nnn', 'id': 'ddd', 'style': 'ss:aa;'}, [['a', [44, 47, 61, 64], {}, [['br', [48, 53, 53, 52], {}, []], ['br', [54, 60, 60, 59], {}, []]]]]]]
+assert node_list == [('div', [1, 43, 66, 72], {'class': 'nnn', 'id': 'ddd', 'style': 'ss:aa;'}, [('a', [44, 47, 61, 64], {}, [('br', [48, 53, 53, 52], {}, []), ('br', [54, 60, 60, 59], {}, [])])])]
 
 test_3_str = """
         <br />
@@ -118,7 +118,7 @@ test_3_str = """
         <a>jjjjj</a>
 """
 node_list = main.node_tree(test_3_str)
-assert node_list == [['br', [9, 15, 15, 14], {}, []], ['img', [38, 58, 58, 57], {'src': 'aldskjf'}, []], ['a', [67, 70, 75, 78], {}, []]]
+assert node_list == [('br', [9, 15, 15, 14], {}, []), ('img', [38, 58, 58, 57], {'src': 'aldskjf'}, []), ('a', [67, 70, 75, 78], {}, [])]
 
 
 test_3_str = """< div id="nnnn"><div>
@@ -130,8 +130,16 @@ test_3_str = """< div id="nnnn"><div>
     <a> </a>
 </div>
 """
-node_list = main.node_tree(test_3_str)
-assert node_list == [['div', [0, 16, 131, 136], {'id': 'nnnn'}, [['div', [16, 21, 111, 116], {}, [['br', [30, 36, 36, 35], {}, []], ['img', [59, 79, 79, 78], {'src': 'aldskjf'}, []], ['br', [79, 85, 85, 84], {}, []], ['a', [94, 97, 102, 105], {}, []]]], ['a', [122, 125, 126, 129], {}, []]]]]
+t = time.time()
+# 0.8863420486450195
+for i in range(100000):
+    node_list = main.node_tree(test_3_str)
+print(time.time()-t)
+t = time.time()
+for i in range(100000):
+    node_list = main.node_tree_a(test_3_str)
+print(time.time()-t)
+assert node_list == [('div', [0, 16, 131, 136], {'id': 'nnnn'}, [('div', [16, 21, 111, 116], {}, [('br', [30, 36, 36, 35], {}, []), ('img', [59, 79, 79, 78], {'src': 'aldskjf'}, []), ('br', [79, 85, 85, 84], {}, []), ('a', [94, 97, 102, 105], {}, [])]), ('a', [122, 125, 126, 129], {}, [])])]
 
 test_3_str = """
 < div>
